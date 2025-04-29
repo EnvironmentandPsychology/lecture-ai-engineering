@@ -22,6 +22,7 @@ def load_model():
             "text-generation",
             model=MODEL_NAME,
             model_kwargs={"torch_dtype": torch.bfloat16},
+            trust_remote_code=True,
             device=device
         )
         st.success(f"モデル '{MODEL_NAME}' の読み込みに成功しました。")
