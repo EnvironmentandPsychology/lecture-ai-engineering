@@ -13,7 +13,7 @@ from pyngrok import ngrok
 
 # --- 設定 ---
 # モデル名を設定
-MODEL_NAME = "google/gemma-2-2b-jpn-it"  # お好みのモデルに変更可能です
+MODEL_NAME = "Qwen/Qwen1.5-1.8B-Chat"  # お好みのモデルに変更可能です
 print(f"モデル名を設定: {MODEL_NAME}")
 
 # --- モデル設定クラス ---
@@ -51,6 +51,47 @@ class SimpleGenerationRequest(BaseModel):
     do_sample: Optional[bool] = True
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 0.9
+
+#バッチ
+class BatchGenerationRequest(BaseModel):
+    prompts: List[str]
+    max_new_tokens: Optional[int] = 128
+    do_sample: Optional[bool] = True
+    temperature: Optional[float] = 0.7
+    top_p: Optional[float] = 0.9
+
+@app.post("/batch_generate")
+async def batch_generate(request: BatchGenerationRequest):
+    global model
+    if model is None:
+        load_model_task()
+        if model is None:
+            raise HTTPException(status_code=503, detail="モデルが利用できません。")
+
+    results = []
+    start_time = time.time()
+    try:
+        print(f"バッチリクエスト受信: {len(request.prompts)}件")
+        outputs = model(
+            request.prompts,
+            max_new_tokens=request.max_new_tokens,
+            do_sample=request.do_sample,
+            temperature=request.temperature,
+            top_p=request.top_p,
+        )
+        for prompt, output_list in zip(request.prompts, outputs):
+            if isinstance(output_list, list) and len(output_list) > 0:
+              result = extract_assistant_response(output_list, prompt)
+            else:
+              result = "生成結果が不正です。"
+            results.append(result)
+        duration = time.time() - start_time
+        return {"results": results, "batch_response_time": duration}
+
+    except Exception as e:
+        print("バッチ生成中にエラー:", e)
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="バッチ生成中にエラーが発生しました。")
 
 class GenerationResponse(BaseModel):
     generated_text: str
