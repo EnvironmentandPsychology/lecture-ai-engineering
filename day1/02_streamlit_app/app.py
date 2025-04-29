@@ -1,5 +1,14 @@
 # app.py
 import streamlit as st
+
+# app.py の先頭近く
+st.set_page_config(
+    page_title="{MODEL_NAME}使用中 🤖",
+    page_icon="💬",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 import ui                   # UIモジュール
 import llm                  # LLMモジュール
 import database             # データベースモジュール
@@ -9,9 +18,8 @@ import torch
 from transformers import pipeline
 from config import MODEL_NAME
 from huggingface_hub import HfFolder
+import datetime
 
-# --- アプリケーション設定 ---
-st.set_page_config(page_title="Gemma Chatbot", layout="wide")
 
 # --- 初期化処理 ---
 # NLTKデータのダウンロード（初回起動時など）
@@ -46,8 +54,8 @@ def load_model():
 pipe = llm.load_model()
 
 # --- Streamlit アプリケーション ---
-st.title("🤖 Gemma 2 Chatbot with Feedback")
-st.write("Gemmaモデルを使用したチャットボットです。回答に対してフィードバックを行えます。")
+st.title("🤖 Qwen/Qwen1.5-1.8B-Chat with Feedback")
+st.write("Qwenモデルを使用したチャットボットです。回答に対してフィードバックを行えます。")
 st.markdown("---")
 
 # --- サイドバー ---
@@ -64,6 +72,17 @@ page = st.sidebar.radio(
     on_change=lambda: setattr(st.session_state, 'page', st.session_state.page_selector) # 選択変更時に状態を更新
 )
 
+#日時
+ver = "v1.0.0"
+now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+st.sidebar.markdown("---")
+st.sidebar.caption(f"Generated: {now} • {ver}")
+
+# 評価メモ
+st.sidebar.markdown("---")
+st.sidebar.header("評価の度合いのメモ")
+temperature = st.sidebar.slider("スコア", 0.0, 1.0, 0.7, 0.05)
+
 
 # --- メインコンテンツ ---
 if st.session_state.page == "チャット":
@@ -78,4 +97,4 @@ elif st.session_state.page == "サンプルデータ管理":
 
 # --- フッターなど（任意） ---
 st.sidebar.markdown("---")
-st.sidebar.info("開発者: [Your Name]")
+st.sidebar.info("開発者: [藤井壮大]")
